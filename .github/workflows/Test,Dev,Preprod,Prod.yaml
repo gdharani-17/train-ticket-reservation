@@ -1,14 +1,19 @@
+
 name: CI/CD Pipeline
 
 on:
   push:
     branches:
-      - master   # deploy only when code is pushed to master
-   paths-ignore:
+      - master
+    paths-ignore:
       - 'README.md'
+
 jobs:
+
+  # 1. Build Application
   build:
     runs-on: ubuntu-latest
+
     steps:
       # 1. Checkout code
       - name: Checkout code
@@ -24,10 +29,13 @@ jobs:
       # 3. Build WAR with Maven
       - name: Validate
         run: mvn validate
+
       - name: Compile
         run: mvn compile
+
       - name: Test
         run: mvn test
+
       - name: Package
         run: mvn package
 
@@ -42,74 +50,87 @@ jobs:
           name: application-war
           path: target/*.war
 
-  # Deploy DEV
+  # 2. Deploy DEV
   deploy-dev:
     name: Deploy DEV
     needs: build
     runs-on: ubuntu-latest
-    environment: dev  # add required reviewers in GitHub → Settings → Environments
+    environment: dev
+
     steps:
       - name: Download WAR
         uses: actions/download-artifact@v4
         with:
           name: application-war
           path: ./artifact
+
       - name: Deploy to Tomcat DEV
         run: |
-          curl -v -u ${{ secrets.DEV_TOMCAT_USER }}:${{ secrets.DEV_TOMCAT_PASSWORD }} \
-          -T ./artifact/TrainBook-1.0.0-SNAPSHOT.war \
-          "http://${{ secrets.DEV_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+          curl --fail --show-error --silent \
+            -u "${{ secrets.TOMCAT_USER_DEV }}:${{ secrets.TOMCAT_PASS_DEV }}" \
+            -T ./artifact/TrainBook-1.0.0-SNAPSHOT.war \
+            "http://${{ secrets.TOMCAT_URL_DEV }}:8080/manager/text/deploy?path=/TrainBook&update=true"
 
-  # Deploy QA
+  # 3. Deploy QA
   deploy-qa:
     name: Deploy QA
-    needs: build
+    needs: deploy-dev
     runs-on: ubuntu-latest
-    environment: qa   # add required reviewers in GitHub → Settings → Environments
+    environment: qa
+
     steps:
       - name: Download WAR
         uses: actions/download-artifact@v4
         with:
           name: application-war
           path: ./artifact
+
       - name: Deploy to Tomcat QA
         run: |
-          curl -v -u ${{ secrets.QA_TOMCAT_USER }}:${{ secrets.QA_TOMCAT_PASSWORD }} \
-          -T ./artifact/TrainBook-1.0.0-SNAPSHOT.war \
-          "http://${{ secrets.QA_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+          curl --fail --show-error --silent \
+            -u "${{ secrets.TOMCAT_USER_TEST }}:${{ secrets.TOMCAT_PASS_TEST }}" \
+            -T ./artifact/TrainBook-1.0.0-SNAPSHOT.war \
+            "http://${{ secrets.TOMCAT_URL_TEST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
 
-  # Deploy PrePROD
+  # 4. Deploy PrePROD
   deploy-preprod:
     name: Deploy PrePROD
-    needs: build
+    needs: deploy-qa
     runs-on: ubuntu-latest
-    environment: preprod  # add required reviewers in GitHub → Settings → Environments
+    environment: preprod
+
     steps:
       - name: Download WAR
         uses: actions/download-artifact@v4
         with:
           name: application-war
           path: ./artifact
+
       - name: Deploy to Tomcat PrePROD
         run: |
-          curl -v -u ${{ secrets.PREPROD_TOMCAT_USER }}:${{ secrets.PREPROD_TOMCAT_PASSWORD }} \
-          -T ./artifact/TrainBook-1.0.0-SNAPSHOT.war \
-          "http://${{ secrets.PREPROD_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+          curl --fail --show-error --silent \
+            -u "${{ secrets.TOMCAT_USER_PRE_PROD }}:${{ secrets.TOMCAT_PASS_PRE_PROD }}" \
+            -T ./artifact/TrainBook-1.0.0-SNAPSHOT.war \
+            "http://${{ secrets.TOMCAT_URL_PRE_PROD }}:8080/manager/text/deploy?path=/TrainBook&update=true"
 
-  # Deploy PROD
+  # 5. Deploy PROD
   deploy-prod:
     name: Deploy PROD
-    needs: build
+    needs: deploy-preprod
     runs-on: ubuntu-latest
-    environment: prod   # add required reviewers in GitHub → Settings → Environments
+    environment: prod
+
     steps:
       - name: Download WAR
         uses: actions/download-artifact@v4
         with:
           name: application-war
           path: ./artifact
+
       - name: Deploy to Tomcat PROD
         run: |
-          curl -v -u ${{ secrets.PROD_TOMCAT_USER }}:${{ secrets.PROD_TOMCAT_PASSWORD }} \
-          -T ./artifact/TrainBook-1.0.0-SNAPSHOT.war \
-          "http://${{ secrets.PROD_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+          curl --fail --show-error --silent \
+            -u "${{ secrets.TOMCAT_USER_PROD }}:${{ secrets.TOMCAT_PASS_PROD }}" \
+            -T ./artifact/TrainBook-1.0.0-SNAPSHOT.war \
+            "http://${{ secrets.TOMCAT_URL_PROD }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+
