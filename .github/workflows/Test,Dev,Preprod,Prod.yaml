@@ -26,7 +26,9 @@ jobs:
       - name: Package
         run: mvn package
       - name: Verify WAR file
-        run: ls -lh target/*.war
+        run: |
+             ls -lh target/*.war
+             unzip -t target/TrainBook-1.0.0-SNAPSHOT.war
       - name: Upload WAR
         uses: actions/upload-artifact@v4
         with:
