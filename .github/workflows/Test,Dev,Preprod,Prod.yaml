@@ -46,9 +46,9 @@ jobs:
           path: ./artifact
       - name: Deploy to Tomcat DEV
         env:
-          TOMCAT_URL: ${{ secrets.TOMCAT_URL_DEV }}
-          TOMCAT_USER: ${{ secrets.TOMCAT_USER_DEV }}
-          TOMCAT_PASS: ${{ secrets.TOMCAT_PASS_DEV }}
+         TOMCAT_URL: ${{ secrets.TOMCAT_URL_DEV }}
+         TOMCAT_USER: ${{ secrets.TOMCAT_USER_DEV }}
+         TOMCAT_PASS: ${{ secrets.TOMCAT_PASS_DEV }}
         run: |
           set -euo pipefail
           WAR_FILE=$(find ./artifact -name '*.war' -print -quit)
